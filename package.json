@@ -1,0 +1,50 @@
+{
+  "name": "budget-boss",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "npx vitest run",
+    "test:budget-health": "npx vitest run lib/budget-health/compute-live-budget-health.integration.test.ts lib/budget-health/compute-live-budget-health.explanation.test.ts lib/budget-health/domain/build-historical-context.test.ts",
+    "test:compute-live-budget-health": "node scripts/run-ts-script.cjs ./test-compute-live-budget-health.ts",
+    "test:get-period-context": "node scripts/run-ts-script.cjs ./test-get-period-context.ts",
+    "test:get-actual-spend-to-date": "node scripts/run-ts-script.cjs ./test-get-actual-spend-to-date.ts",
+    "import:transactions": "node scripts/run-ts-script.cjs ./import-transactions.ts",
+    "import:plaid-transactions": "node scripts/run-ts-script.cjs ./import-plaid-transactions.ts",
+    "sync:plaid-transactions": "node scripts/run-ts-script.cjs ./sync-plaid-transactions.ts",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ethpost/budget-boss.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/ethpost/budget-boss/issues"
+  },
+  "homepage": "https://github.com/ethpost/budget-boss#readme",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.103.0",
+    "dotenv": "^17.4.1",
+    "next": "^15.3.0",
+    "plaid": "^38.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.8",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.4"
+  }
+}
