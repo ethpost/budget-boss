@@ -9,8 +9,22 @@ import { getActualSpendToDateByCategory } from "../../../../lib/budget-health/re
 import { getPeriodContext } from "../../../../lib/budget-health/domain/get-period-context";
 import { getHistoricalContextWindow } from "../../../../lib/budget-health/domain/get-historical-context-window";
 import { getBudgetHealthAsOfDate } from "../../../../lib/budget-health/server/load-budget-health-dashboard";
+import {
+  AUTH_COOKIE_NAME,
+  getCookieValueFromHeader,
+  isAuthConfigured,
+  verifyAuthSessionToken,
+} from "../../../../lib/auth/simple-auth";
 
 export async function POST(request: Request) {
+  const authCookieValue = getCookieValueFromHeader(
+    request.headers.get("cookie"),
+    AUTH_COOKIE_NAME
+  );
+  if (isAuthConfigured() && !verifyAuthSessionToken(authCookieValue ?? undefined)) {
+    return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  }
+
   const supabaseUrl =
     process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey =

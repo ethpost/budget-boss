@@ -3,8 +3,22 @@ import { createClient } from "@supabase/supabase-js";
 import { createPlaidClient } from "../../../../lib/transactions/providers/plaid/create-plaid-client";
 import { createPlaidLinkToken } from "../../../../lib/transactions/providers/plaid/create-plaid-link-token";
 import { getBudgetOwnerUserId } from "../../../../lib/budget-setup/repositories/get-budget-owner-user-id";
+import {
+  AUTH_COOKIE_NAME,
+  getCookieValueFromHeader,
+  isAuthConfigured,
+  verifyAuthSessionToken,
+} from "../../../../lib/auth/simple-auth";
 
 export async function POST(request: Request) {
+  const authCookieValue = getCookieValueFromHeader(
+    request.headers.get("cookie"),
+    AUTH_COOKIE_NAME
+  );
+  if (isAuthConfigured() && !verifyAuthSessionToken(authCookieValue ?? undefined)) {
+    return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  }
+
   const body = await request.json().catch(() => ({}));
 
   const plaidClientId = process.env.PLAID_CLIENT_ID;
@@ -37,14 +51,14 @@ export async function POST(request: Request) {
     );
   }
 
-    const supabase = createClient(supabaseUrl, supabaseKey);
+  const supabase = createClient(supabaseUrl, supabaseKey);
   const explicitUserId =
     typeof body.clientUserId === "string" && body.clientUserId.trim().length > 0
       ? body.clientUserId.trim()
       : typeof body.userId === "string" && body.userId.trim().length > 0
         ? body.userId.trim()
         : null;
-    const clientUserId = explicitUserId ?? (await getBudgetOwnerUserId(supabase));
+  const clientUserId = explicitUserId ?? (await getBudgetOwnerUserId(supabase));
 
   if (!clientUserId) {
     return NextResponse.json(

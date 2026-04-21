@@ -1,6 +1,13 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { BudgetChat } from "../components/budget-chat";
 import { loadBudgetHealthDashboard } from "../../lib/budget-health/server/load-budget-health-dashboard";
+import {
+  AUTH_COOKIE_NAME,
+  isAuthConfigured,
+  verifyAuthSessionToken,
+} from "../../lib/auth/simple-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -49,6 +56,10 @@ type ChatPageProps = {
 
 export default async function ChatPage({ searchParams }: ChatPageProps) {
   const resolvedSearchParams = (await searchParams) ?? {};
+  const cookieStore = await cookies();
+  if (isAuthConfigured() && !verifyAuthSessionToken(cookieStore.get(AUTH_COOKIE_NAME)?.value)) {
+    redirect("/login?next=/chat");
+  }
   const state = await loadBudgetHealthDashboard();
   const selectedCategoryId =
     state.status === "ready"
@@ -96,6 +107,9 @@ export default async function ChatPage({ searchParams }: ChatPageProps) {
           </Link>
           <Link className="shellLink" href="/settings">
             Connections
+          </Link>
+          <Link className="shellLink" href="/api/auth/logout">
+            Sign out
           </Link>
           <div className="shellPill">
             {state.status === "ready" ? `Last updated ${formatReadableTimestamp(state.result.meta.computedAt)}` : "Budget snapshot unavailable"}

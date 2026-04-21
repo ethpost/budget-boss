@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import { buildTrendBasedBudgetPlan } from "../../lib/budget-setup/domain/build-trend-based-budget-plan";
 import { getActiveCategories } from "../../lib/budget-setup/repositories/get-active-categories";
@@ -9,6 +11,11 @@ import { getActualSpendToDateByCategory } from "../../lib/budget-health/reposito
 import { getPeriodContext } from "../../lib/budget-health/domain/get-period-context";
 import { getHistoricalContextWindow } from "../../lib/budget-health/domain/get-historical-context-window";
 import { getBudgetHealthAsOfDate } from "../../lib/budget-health/server/load-budget-health-dashboard";
+import {
+  AUTH_COOKIE_NAME,
+  isAuthConfigured,
+  verifyAuthSessionToken,
+} from "../../lib/auth/simple-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +35,11 @@ export default async function BudgetPage({
     error?: string | string[];
   }>;
 }) {
+  const cookieStore = await cookies();
+  if (isAuthConfigured() && !verifyAuthSessionToken(cookieStore.get(AUTH_COOKIE_NAME)?.value)) {
+    redirect("/login?next=/budget");
+  }
+
   const asOfDate = getBudgetHealthAsOfDate();
   const period = getPeriodContext(asOfDate);
   const historicalWindow = getHistoricalContextWindow(asOfDate);
@@ -66,6 +78,9 @@ export default async function BudgetPage({
             <Link className="shellLink" href="/chat">
               Chat
             </Link>
+            <Link className="shellLink" href="/api/auth/logout">
+              Sign out
+            </Link>
           </div>
         </header>
         <section className="hero">
@@ -103,6 +118,9 @@ export default async function BudgetPage({
             </Link>
             <Link className="shellLink" href="/chat">
               Chat
+            </Link>
+            <Link className="shellLink" href="/api/auth/logout">
+              Sign out
             </Link>
           </div>
         </header>
@@ -167,6 +185,9 @@ export default async function BudgetPage({
           </Link>
           <Link className="shellLink" href="/chat">
             Chat
+          </Link>
+          <Link className="shellLink" href="/api/auth/logout">
+            Sign out
           </Link>
           <div className="shellPill">Trend-based monthly plan</div>
         </div>

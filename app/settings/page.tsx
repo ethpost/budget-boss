@@ -1,9 +1,16 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import { PlaidLinkPanel } from "../components/plaid-link-panel";
 import { buildTransactionImportAudit } from "../../lib/transactions/domain/build-transaction-import-audit";
 import { getBudgetOwnerUserId } from "../../lib/budget-setup/repositories/get-budget-owner-user-id";
 import { getRecentTransactions } from "../../lib/transactions/repositories/get-recent-transactions";
+import {
+  AUTH_COOKIE_NAME,
+  isAuthConfigured,
+  verifyAuthSessionToken,
+} from "../../lib/auth/simple-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -38,6 +45,11 @@ function formatDateRange(
 }
 
 export default async function SettingsPage() {
+  const cookieStore = await cookies();
+  if (isAuthConfigured() && !verifyAuthSessionToken(cookieStore.get(AUTH_COOKIE_NAME)?.value)) {
+    redirect("/login?next=/settings");
+  }
+
   const plaidConfigured =
     Boolean(process.env.PLAID_CLIENT_ID) && Boolean(process.env.PLAID_SECRET);
   const supabaseUrl =
@@ -78,6 +90,9 @@ export default async function SettingsPage() {
           </Link>
           <Link className="shellLink" href="/">
             Back to budget health
+          </Link>
+          <Link className="shellLink" href="/api/auth/logout">
+            Sign out
           </Link>
           <div className="shellPill">Connections and app controls</div>
         </div>

@@ -1093,6 +1093,97 @@ textarea {
   color: var(--muted);
 }
 
+.authScreen {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+}
+
+.authCard {
+  width: min(560px, 100%);
+  padding: 26px;
+  border: 1px solid var(--border);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: var(--shadow);
+}
+
+.authBrand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.title--auth {
+  font-size: clamp(2rem, 4vw, 3.2rem);
+}
+
+.authForm {
+  display: grid;
+  gap: 14px;
+  margin-top: 24px;
+}
+
+.authField {
+  display: grid;
+  gap: 8px;
+}
+
+.authLabel {
+  font-size: 0.82rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.authInput {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.94);
+  color: var(--text);
+  outline: none;
+}
+
+.authInput:focus {
+  border-color: rgba(17, 109, 107, 0.45);
+  box-shadow: 0 0 0 3px rgba(17, 109, 107, 0.12);
+}
+
+.authButton {
+  min-height: 48px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--accent);
+  color: white;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.authButton:disabled {
+  cursor: progress;
+  opacity: 0.75;
+}
+
+.authError {
+  margin: 0;
+  color: var(--over);
+  font-size: 0.95rem;
+}
+
+.authFooter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.panel--auth {
+  margin-top: 24px;
+}
+
 @keyframes shimmer {
   100% {
     transform: translateX(100%);
