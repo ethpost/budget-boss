@@ -2,20 +2,12 @@ import { NextResponse } from "next/server";
 import { requireRequestAuthSession } from "../../../../lib/auth/server-auth";
 import { buildBuyingBehaviorEvidence } from "../../../../lib/budget-health/domain/build-buying-behavior-evidence";
 import { loadBudgetHealthDashboard } from "../../../../lib/budget-health/server/load-budget-health-dashboard";
+import {
+  describeMissingResponseText,
+  extractResponseOutputText,
+  type OpenAIResponsePayload,
+} from "../../../../lib/openai/extract-response-output-text";
 import { getBehaviorTransactions } from "../../../../lib/transactions/repositories/get-behavior-transactions";
-
-type OpenAIResponse = {
-  output_text?: string;
-  output?: Array<{
-    content?: Array<{
-      text?: string;
-      type?: string;
-    }>;
-  }>;
-  error?: {
-    message?: string;
-  };
-};
 
 function getRequiredQuestion(value: unknown): string {
   if (typeof value !== "string") {
@@ -38,20 +30,6 @@ function subtractDays(dateString: string, days: number): string {
   const date = new Date(`${dateString}T00:00:00.000Z`);
   date.setUTCDate(date.getUTCDate() - days);
   return date.toISOString().slice(0, 10);
-}
-
-function extractOutputText(response: OpenAIResponse): string | null {
-  if (response.output_text && response.output_text.trim().length > 0) {
-    return response.output_text.trim();
-  }
-
-  const text = response.output
-    ?.flatMap((item) => item.content ?? [])
-    .map((content) => content.text ?? "")
-    .join("")
-    .trim();
-
-  return text && text.length > 0 ? text : null;
 }
 
 function buildInstructions(): string {
@@ -95,12 +73,15 @@ async function generateGroundedAnswer(params: {
         null,
         2
       ),
-      max_output_tokens: 800,
+      max_output_tokens: 1600,
+      reasoning: {
+        effort: "low",
+      },
       store: false,
     }),
   });
 
-  const payload = (await response.json().catch(() => ({}))) as OpenAIResponse;
+  const payload = (await response.json().catch(() => ({}))) as OpenAIResponsePayload;
 
   if (!response.ok) {
     throw new Error(
@@ -108,9 +89,9 @@ async function generateGroundedAnswer(params: {
     );
   }
 
-  const outputText = extractOutputText(payload);
+  const outputText = extractResponseOutputText(payload);
   if (!outputText) {
-    throw new Error("OpenAI did not return an answer.");
+    throw new Error(describeMissingResponseText(payload));
   }
 
   return outputText;
