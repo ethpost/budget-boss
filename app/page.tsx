@@ -2,7 +2,12 @@ import Link from "next/link";
 import type { CSSProperties } from "react";
 import { LogoutButton } from "./components/logout-button";
 import { requirePageAuthSession } from "../lib/auth/server-auth";
+import { buildOperatingCenterSummary } from "../lib/budget-health/domain/build-operating-center-summary";
 import { loadBudgetHealthDashboard } from "../lib/budget-health/server/load-budget-health-dashboard";
+import { buildTransactionImportAudit } from "../lib/transactions/domain/build-transaction-import-audit";
+import { getCategorizationCoverage } from "../lib/transactions/repositories/get-categorization-coverage";
+import { getRecentTransactions } from "../lib/transactions/repositories/get-recent-transactions";
+import { getUncategorizedTransactionGroups } from "../lib/transactions/repositories/get-uncategorized-transaction-groups";
 
 export const dynamic = "force-dynamic";
 
@@ -100,6 +105,10 @@ function getCategoryHref(categoryId: string): string {
 
 function formatPercent(value: number): string {
   return `${Math.round(value)}%`;
+}
+
+function formatCoveragePercent(value: number): string {
+  return `${Math.round(value * 100)}%`;
 }
 
 function clampPercent(value: number): number {
@@ -338,8 +347,41 @@ export default async function Page({ searchParams }: PageProps) {
 
   const { result, asOfDate } = state;
   const { explanation, totals, categories, period } = result;
-  const plaidConfigured =
-    Boolean(process.env.PLAID_CLIENT_ID) && Boolean(process.env.PLAID_SECRET);
+  const [categorizationCoverage, reviewGroups, recentPlaidTransactions] =
+    await Promise.all([
+      getCategorizationCoverage({
+        supabase: authSession.supabase,
+        userId: authSession.user.id,
+        periodStartDate: period.periodStartDate,
+        asOfDate,
+        source: "plaid",
+      }).catch(() => null),
+      getUncategorizedTransactionGroups({
+        supabase: authSession.supabase,
+        userId: authSession.user.id,
+        source: "plaid",
+        limit: 100,
+      }).catch(() => []),
+      getRecentTransactions({
+        supabase: authSession.supabase,
+        userId: authSession.user.id,
+        source: "plaid",
+        limit: 20,
+      }).catch(() => []),
+    ]);
+  const recentImportAudit = buildTransactionImportAudit(recentPlaidTransactions);
+  const reviewTransactionCount = reviewGroups.reduce(
+    (sum, group) => sum + group.transactionCount,
+    0
+  );
+  const operatingSummary = buildOperatingCenterSummary({
+    projectedMonthEndVariance: totals.projectedMonthEndVariance,
+    categorizedSpendCoverageRatio:
+      categorizationCoverage?.categorizedSpendCoverageRatio ?? 0,
+    uncategorizedTransactionCount:
+      categorizationCoverage?.uncategorizedTransactionCount ?? reviewTransactionCount,
+    reviewGroupCount: reviewGroups.length,
+  });
   const selectedCategoryId = getSelectedCategoryId({
     searchParams: resolvedSearchParams,
     primaryDriverCategoryId: explanation.primaryDriverCategoryId,
@@ -522,10 +564,73 @@ export default async function Page({ searchParams }: PageProps) {
               <span className={`chip chip--${explanation.confidence}`}>
                 Confidence: {confidenceLabel(explanation.confidence)}
               </span>
+              <span className="chip">
+                Operating status: {operatingSummary.status.replace("_", " ")}
+              </span>
               <span className="chip">As of {asOfDate}</span>
               <span className="chip">
                 Day {period.daysElapsed} of {period.totalDaysInPeriod}
               </span>
+            </div>
+
+            <div className="grid2">
+              <article className="panel panel--accent">
+                <p className="label">Operating center</p>
+                <p className="value">{operatingSummary.nextActionLabel}</p>
+                <p className="subvalue">{operatingSummary.headline}</p>
+                <div className="plaidPanelActions">
+                  <Link
+                    className="primaryButton primaryButton--link"
+                    href={
+                      operatingSummary.status === "needs_review"
+                        ? "/transactions"
+                        : explanation.primaryDriverCategoryId
+                          ? getCategoryHref(explanation.primaryDriverCategoryId)
+                          : "/settings"
+                    }
+                  >
+                    {operatingSummary.status === "needs_review"
+                      ? "Open review"
+                      : operatingSummary.status === "watch"
+                        ? "Inspect driver"
+                        : "Check syncs"}
+                  </Link>
+                  <span className="plaidStatus">{operatingSummary.coverageLabel}</span>
+                </div>
+              </article>
+
+              <article className="panel">
+                <p className="label">Automation queue</p>
+                <p className="value">
+                  {reviewGroups.length} group{reviewGroups.length === 1 ? "" : "s"}
+                </p>
+                <p className="subvalue">
+                  {reviewTransactionCount} transaction
+                  {reviewTransactionCount === 1 ? "" : "s"} need categorization review.
+                </p>
+                <div className="metricRow metricRow--compact">
+                  <div className="miniMetric">
+                    <p className="label">Spend covered</p>
+                    <p className="value">
+                      {categorizationCoverage
+                        ? formatCoveragePercent(
+                            categorizationCoverage.categorizedSpendCoverageRatio
+                          )
+                        : "0%"}
+                    </p>
+                    <p className="subvalue">Current-month Plaid coverage</p>
+                  </div>
+                  <div className="miniMetric">
+                    <p className="label">Uncategorized</p>
+                    <p className="value">
+                      {categorizationCoverage
+                        ? formatCurrency(categorizationCoverage.uncategorizedSpendAmount)
+                        : formatCurrency(0)}
+                    </p>
+                    <p className="subvalue">Current-month spend not counted by category</p>
+                  </div>
+                </div>
+              </article>
             </div>
 
             <div className="panelGrid">
@@ -561,6 +666,24 @@ export default async function Page({ searchParams }: PageProps) {
             </div>
 
             <div className="stack">
+              <article className="panel">
+                <p className="label">Recent Plaid sync</p>
+                <p className="value">{recentImportAudit.transactionCount} recent rows</p>
+                <p className="subvalue">
+                  {recentImportAudit.categorizedTransactionCount} categorized ·{" "}
+                  {recentImportAudit.uncategorizedTransactionCount} uncategorized ·{" "}
+                  {formatCurrency(recentImportAudit.totalAmount)} total in the latest sample.
+                </p>
+                <div className="plaidPanelActions">
+                  <Link className="primaryButton primaryButton--link" href="/settings">
+                    Manage connection
+                  </Link>
+                  <Link className="shellLink" href="/transactions">
+                    Review exceptions
+                  </Link>
+                </div>
+              </article>
+
               <article className="panel plaidPanel">
                 <p className="label">Chat</p>
                 <p className="value">Ask the budget</p>
