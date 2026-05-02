@@ -92,6 +92,9 @@ export default async function BudgetPage({
           <Link className="shellLink" href="/chat">
             Chat
           </Link>
+          <Link className="shellLink" href="/transactions">
+            Review
+          </Link>
           <LogoutButton />
           <div className="shellPill">Trend-based monthly plan</div>
         </div>

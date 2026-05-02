@@ -100,6 +100,9 @@ export default async function ChatPage({ searchParams }: ChatPageProps) {
           <Link className="shellLink" href="/settings">
             Connections
           </Link>
+          <Link className="shellLink" href="/transactions">
+            Review
+          </Link>
           <LogoutButton />
           <div className="shellPill">
             {state.status === "ready" ? `Last updated ${formatReadableTimestamp(state.result.meta.computedAt)}` : "Budget snapshot unavailable"}

@@ -68,6 +68,9 @@ export default async function SettingsPage() {
           <Link className="shellLink" href="/chat">
             Chat
           </Link>
+          <Link className="shellLink" href="/transactions">
+            Review
+          </Link>
           <Link className="shellLink" href="/">
             Back to budget health
           </Link>

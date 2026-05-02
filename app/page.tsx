@@ -409,6 +409,9 @@ export default async function Page({ searchParams }: PageProps) {
           <Link className="shellLink" href="/chat">
             Chat
           </Link>
+          <Link className="shellLink" href="/transactions">
+            Review
+          </Link>
           <Link className="shellLink" href="/settings">
             Connections
           </Link>
