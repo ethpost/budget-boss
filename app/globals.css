@@ -441,6 +441,12 @@ textarea {
   color: var(--over);
 }
 
+.coverageNote {
+  margin: 12px 0 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
 .amount {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
