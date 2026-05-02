@@ -59,6 +59,12 @@ export function createSupabaseAnonClient(): SupabaseClient {
   return createClient(supabaseUrl, supabaseAnonKey);
 }
 
+export function getAuthRefreshCookieFromHeader(
+  cookieHeader: string | null
+): string | null {
+  return getCookieValueFromHeader(cookieHeader, AUTH_REFRESH_COOKIE_NAME);
+}
+
 export function createSupabaseServiceClient(): SupabaseClient {
   const supabaseUrl = getSupabaseUrl();
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -121,6 +127,12 @@ export async function requirePageAuthSession(
   const session = await getPageAuthSession();
 
   if (!session) {
+    const cookieStore = await cookies();
+    const refreshToken = cookieStore.get(AUTH_REFRESH_COOKIE_NAME)?.value;
+    if (refreshToken) {
+      redirect(`/api/auth/refresh?next=${encodeURIComponent(nextPath)}`);
+    }
+
     redirect(`/login?next=${encodeURIComponent(nextPath)}`);
   }
 

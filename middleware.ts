@@ -124,7 +124,16 @@ export async function middleware(request: NextRequest) {
   const protectedPage = isProtectedPage(pathname);
   const protectedApi = isProtectedApi(pathname);
 
-  if (!protectedPage && !protectedApi && pathname !== "/login") {
+  if (
+    !protectedPage &&
+    !protectedApi &&
+    pathname !== "/login" &&
+    pathname !== "/api/auth/refresh"
+  ) {
+    return NextResponse.next();
+  }
+
+  if (pathname === "/api/auth/refresh") {
     return NextResponse.next();
   }
 
