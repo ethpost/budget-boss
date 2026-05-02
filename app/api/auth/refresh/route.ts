@@ -8,20 +8,6 @@ import {
   normalizeNextPath,
 } from "../../../../lib/auth/server-auth";
 
-function clearAuthCookies(response: NextResponse): void {
-  for (const cookieName of [AUTH_ACCESS_COOKIE_NAME, AUTH_REFRESH_COOKIE_NAME]) {
-    response.cookies.set({
-      name: cookieName,
-      value: "",
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-      maxAge: 0,
-    });
-  }
-}
-
 function setAuthCookies(
   response: NextResponse,
   session: {
@@ -69,11 +55,9 @@ export async function GET(request: Request) {
   });
 
   if (error || !data.session) {
-    const response = NextResponse.redirect(
+    return NextResponse.redirect(
       new URL(`/login?next=${encodeURIComponent(nextPath)}`, request.url)
     );
-    clearAuthCookies(response);
-    return response;
   }
 
   const response = NextResponse.redirect(new URL(nextPath, request.url));
