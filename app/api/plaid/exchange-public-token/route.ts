@@ -4,12 +4,6 @@ import { createPlaidClient } from "../../../../lib/transactions/providers/plaid/
 import { exchangePublicTokenAndSync } from "../../../../lib/transactions/providers/plaid/exchange-public-token-and-sync";
 import { getBudgetOwnerUserId } from "../../../../lib/budget-setup/repositories/get-budget-owner-user-id";
 import { upsertPlaidItemConnection } from "../../../../lib/transactions/repositories/upsert-plaid-item-connection";
-import {
-  AUTH_COOKIE_NAME,
-  getCookieValueFromHeader,
-  isAuthConfigured,
-  verifyAuthSessionToken,
-} from "../../../../lib/auth/simple-auth";
 
 function getRequiredText(value: unknown, fieldName: string): string {
   if (typeof value !== "string" || value.trim().length === 0) {
@@ -22,13 +16,6 @@ function getRequiredText(value: unknown, fieldName: string): string {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const authCookieValue = getCookieValueFromHeader(
-      request.headers.get("cookie"),
-      AUTH_COOKIE_NAME
-    );
-    if (isAuthConfigured() && !verifyAuthSessionToken(authCookieValue ?? undefined)) {
-      return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
-    }
     const publicToken = getRequiredText(body.publicToken, "publicToken");
 
     const supabaseUrl =

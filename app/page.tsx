@@ -1,12 +1,5 @@
 import Link from "next/link";
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 import type { CSSProperties } from "react";
-import {
-  AUTH_COOKIE_NAME,
-  isAuthConfigured,
-  verifyAuthSessionToken,
-} from "../lib/auth/simple-auth";
 import { loadBudgetHealthDashboard } from "../lib/budget-health/server/load-budget-health-dashboard";
 
 export const dynamic = "force-dynamic";
@@ -275,10 +268,6 @@ function buildCategoryDetailSummary(params: {
 
 export default async function Page({ searchParams }: PageProps) {
   const resolvedSearchParams = (await searchParams) ?? {};
-  const cookieStore = await cookies();
-  if (isAuthConfigured() && !verifyAuthSessionToken(cookieStore.get(AUTH_COOKIE_NAME)?.value)) {
-    redirect("/login?next=/");
-  }
   const state = await loadBudgetHealthDashboard();
 
   if (state.status !== "ready") {
@@ -419,9 +408,6 @@ export default async function Page({ searchParams }: PageProps) {
           </Link>
           <Link className="shellLink" href="/settings">
             Connections
-          </Link>
-          <Link className="shellLink" href="/api/auth/logout">
-            Sign out
           </Link>
           <div className="shellPill">
             Last updated {formatReadableTimestamp(result.meta.computedAt)}
