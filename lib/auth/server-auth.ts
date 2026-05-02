@@ -11,6 +11,14 @@ export type ServerAuthSession = {
   supabase: SupabaseClient;
 };
 
+export type AuthCookieSession = {
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+};
+
+export const AUTH_REFRESH_TTL_SECONDS = 60 * 60 * 24 * 30;
+
 function getSupabaseUrl(): string | null {
   return process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL ?? null;
 }
@@ -38,6 +46,17 @@ export function createSupabaseUserClient(accessToken: string): SupabaseClient {
       },
     },
   });
+}
+
+export function createSupabaseAnonClient(): SupabaseClient {
+  const supabaseUrl = getSupabaseUrl();
+  const supabaseAnonKey = getSupabaseAnonKey();
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error("Missing Supabase URL or anon key.");
+  }
+
+  return createClient(supabaseUrl, supabaseAnonKey);
 }
 
 export function createSupabaseServiceClient(): SupabaseClient {

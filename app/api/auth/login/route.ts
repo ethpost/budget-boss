@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import {
   AUTH_ACCESS_COOKIE_NAME,
   AUTH_REFRESH_COOKIE_NAME,
+  AUTH_REFRESH_TTL_SECONDS,
   normalizeNextPath,
 } from "../../../../lib/auth/server-auth";
 
@@ -77,7 +78,7 @@ export async function POST(request: Request) {
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
       path: "/",
-      maxAge: 60 * 60 * 24 * 30,
+      maxAge: AUTH_REFRESH_TTL_SECONDS,
     });
 
     return response;
