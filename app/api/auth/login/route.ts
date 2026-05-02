@@ -49,7 +49,8 @@ export async function POST(request: Request) {
             "Email and password are required."
           )}`,
           request.url
-        )
+        ),
+        { status: 303 }
       );
     }
 
@@ -73,7 +74,8 @@ export async function POST(request: Request) {
             authResult.error.message
           )}`,
           request.url
-        )
+        ),
+        { status: 303 }
       );
     }
 
@@ -90,13 +92,14 @@ export async function POST(request: Request) {
             message
           )}`,
           request.url
-        )
+        ),
+        { status: 303 }
       );
     }
 
     const response = expectsJson
       ? NextResponse.json({ ok: true, next: nextPath })
-      : NextResponse.redirect(new URL(nextPath, request.url));
+      : NextResponse.redirect(new URL(nextPath, request.url), { status: 303 });
     response.cookies.set({
       name: AUTH_ACCESS_COOKIE_NAME,
       value: authResult.data.session.access_token,
@@ -126,7 +129,8 @@ export async function POST(request: Request) {
             error instanceof Error ? error.message : "Failed to sign in."
           )}`,
           request.url
-        )
+        ),
+        { status: 303 }
       );
     }
 
