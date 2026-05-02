@@ -1124,31 +1124,6 @@ textarea {
   margin-top: 24px;
 }
 
-.authToggle {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
-  padding: 4px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.62);
-}
-
-.authToggleButton {
-  min-height: 40px;
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--muted);
-  font-weight: 650;
-  cursor: pointer;
-}
-
-.authToggleButton.isActive {
-  background: var(--text);
-  color: white;
-}
-
 .authField {
   display: grid;
   gap: 8px;
@@ -1185,6 +1160,16 @@ textarea {
   color: white;
   font-weight: 650;
   cursor: pointer;
+}
+
+.authButton--secondary {
+  background: var(--text);
+}
+
+.authActionGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
 }
 
 .authButton:disabled {

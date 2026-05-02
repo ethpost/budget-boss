@@ -8,6 +8,7 @@ export const dynamic = "force-dynamic";
 type LoginPageProps = {
   searchParams?: Promise<{
     next?: string | string[];
+    error?: string | string[];
   }>;
 };
 
@@ -22,6 +23,9 @@ function normalizeSearchParam(value?: string | string[]): string {
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const params = (await searchParams) ?? {};
   const nextPath = normalizeSearchParam(params.next);
+  const errorMessage = Array.isArray(params.error)
+    ? params.error[0] ?? null
+    : params.error ?? null;
   const session = await getPageAuthSession();
 
   if (session) {
@@ -45,7 +49,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           the signed-in user.
         </p>
 
-        <LoginForm />
+        <LoginForm nextPath={nextPath} errorMessage={errorMessage} />
 
         <div className="authFooter">
           <Link className="shellLink" href="/">

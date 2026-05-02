@@ -25,16 +25,31 @@ function getSupabaseLoginClient() {
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json().catch(() => ({}));
+    const contentType = request.headers.get("content-type") ?? "";
+    const expectsJson = contentType.includes("application/json");
+    const body = expectsJson
+      ? await request.json().catch(() => ({}))
+      : Object.fromEntries((await request.formData()).entries());
     const email = getRequiredText(body.email);
     const password = getRequiredText(body.password);
     const mode = getRequiredText(body.mode);
     const nextPath = normalizeNextPath(body.next);
 
     if (!email || !password) {
-      return NextResponse.json(
-        { error: "Email and password are required." },
-        { status: 400 }
+      if (expectsJson) {
+        return NextResponse.json(
+          { error: "Email and password are required." },
+          { status: 400 }
+        );
+      }
+
+      return NextResponse.redirect(
+        new URL(
+          `/login?next=${encodeURIComponent(nextPath)}&error=${encodeURIComponent(
+            "Email and password are required."
+          )}`,
+          request.url
+        )
       );
     }
 
@@ -45,23 +60,43 @@ export async function POST(request: Request) {
         : await supabase.auth.signInWithPassword({ email, password });
 
     if (authResult.error) {
-      return NextResponse.json(
-        { error: authResult.error.message },
-        { status: 401 }
+      if (expectsJson) {
+        return NextResponse.json(
+          { error: authResult.error.message },
+          { status: 401 }
+        );
+      }
+
+      return NextResponse.redirect(
+        new URL(
+          `/login?next=${encodeURIComponent(nextPath)}&error=${encodeURIComponent(
+            authResult.error.message
+          )}`,
+          request.url
+        )
       );
     }
 
     if (!authResult.data.session) {
-      return NextResponse.json(
-        {
-          error:
-            "Supabase did not return a session. Check whether email confirmation is required.",
-        },
-        { status: 401 }
+      const message =
+        "Supabase did not return a session. Check whether email confirmation is required.";
+      if (expectsJson) {
+        return NextResponse.json({ error: message }, { status: 401 });
+      }
+
+      return NextResponse.redirect(
+        new URL(
+          `/login?next=${encodeURIComponent(nextPath)}&error=${encodeURIComponent(
+            message
+          )}`,
+          request.url
+        )
       );
     }
 
-    const response = NextResponse.json({ ok: true, next: nextPath });
+    const response = expectsJson
+      ? NextResponse.json({ ok: true, next: nextPath })
+      : NextResponse.redirect(new URL(nextPath, request.url));
     response.cookies.set({
       name: AUTH_ACCESS_COOKIE_NAME,
       value: authResult.data.session.access_token,
@@ -83,6 +118,18 @@ export async function POST(request: Request) {
 
     return response;
   } catch (error) {
+    const contentType = request.headers.get("content-type") ?? "";
+    if (!contentType.includes("application/json")) {
+      return NextResponse.redirect(
+        new URL(
+          `/login?error=${encodeURIComponent(
+            error instanceof Error ? error.message : "Failed to sign in."
+          )}`,
+          request.url
+        )
+      );
+    }
+
     return NextResponse.json(
       {
         error: error instanceof Error ? error.message : "Failed to sign in.",
