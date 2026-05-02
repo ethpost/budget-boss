@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BudgetChat } from "../components/budget-chat";
+import { requirePageAuthSession } from "../../lib/auth/server-auth";
 import { loadBudgetHealthDashboard } from "../../lib/budget-health/server/load-budget-health-dashboard";
 
 export const dynamic = "force-dynamic";
@@ -48,8 +49,9 @@ type ChatPageProps = {
 };
 
 export default async function ChatPage({ searchParams }: ChatPageProps) {
+  const authSession = await requirePageAuthSession("/chat");
   const resolvedSearchParams = (await searchParams) ?? {};
-  const state = await loadBudgetHealthDashboard();
+  const state = await loadBudgetHealthDashboard(authSession.supabase);
   const selectedCategoryId =
     state.status === "ready"
       ? getSelectedCategoryId({
@@ -96,6 +98,9 @@ export default async function ChatPage({ searchParams }: ChatPageProps) {
           </Link>
           <Link className="shellLink" href="/settings">
             Connections
+          </Link>
+          <Link className="shellLink" href="/api/auth/logout">
+            Sign out
           </Link>
           <div className="shellPill">
             {state.status === "ready" ? `Last updated ${formatReadableTimestamp(state.result.meta.computedAt)}` : "Budget snapshot unavailable"}

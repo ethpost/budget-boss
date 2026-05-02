@@ -1,24 +1,18 @@
-import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import { createPlaidClient } from "../../../../lib/transactions/providers/plaid/create-plaid-client";
 import { handlePlaidTransactionsWebhook } from "../../../../lib/transactions/providers/plaid/handle-plaid-transactions-webhook";
+import { createSupabaseServiceClient } from "../../../../lib/auth/server-auth";
 
 export async function POST(request: Request) {
   try {
     const payload = await request.json();
 
-    const supabaseUrl =
-      process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey =
-      process.env.SUPABASE_SERVICE_ROLE_KEY ??
-      process.env.SUPABASE_ANON_KEY ??
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     const plaidClientId = process.env.PLAID_CLIENT_ID;
     const plaidSecret = process.env.PLAID_SECRET;
 
-    if (!supabaseUrl || !supabaseKey) {
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
       return NextResponse.json(
-        { error: "Missing Supabase configuration." },
+        { error: "Missing Supabase service role configuration." },
         { status: 500 }
       );
     }
@@ -30,7 +24,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabase = createSupabaseServiceClient();
     const plaidClient = createPlaidClient({
       clientId: plaidClientId,
       secret: plaidSecret,

@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { createPlaidClient } from "../../../../lib/transactions/providers/plaid/create-plaid-client";
 import { exchangePublicTokenAndSync } from "../../../../lib/transactions/providers/plaid/exchange-public-token-and-sync";
-import { getBudgetOwnerUserId } from "../../../../lib/budget-setup/repositories/get-budget-owner-user-id";
 import { upsertPlaidItemConnection } from "../../../../lib/transactions/repositories/upsert-plaid-item-connection";
+import { requireRequestAuthSession } from "../../../../lib/auth/server-auth";
 
 function getRequiredText(value: unknown, fieldName: string): string {
   if (typeof value !== "string" || value.trim().length === 0) {
@@ -15,22 +14,13 @@ function getRequiredText(value: unknown, fieldName: string): string {
 
 export async function POST(request: Request) {
   try {
+    const authSession = await requireRequestAuthSession(request).catch(() => null);
+    if (!authSession) {
+      return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+    }
+
     const body = await request.json();
     const publicToken = getRequiredText(body.publicToken, "publicToken");
-
-    const supabaseUrl =
-      process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey =
-      process.env.SUPABASE_SERVICE_ROLE_KEY ??
-      process.env.SUPABASE_ANON_KEY ??
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-    if (!supabaseUrl || !supabaseKey) {
-      return NextResponse.json(
-        { error: "Missing Supabase configuration." },
-        { status: 500 }
-      );
-    }
 
     const plaidClientId = process.env.PLAID_CLIENT_ID;
     const plaidSecret = process.env.PLAID_SECRET;
@@ -42,27 +32,14 @@ export async function POST(request: Request) {
       );
     }
 
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabase = authSession.supabase;
     const plaidClient = createPlaidClient({
       clientId: plaidClientId,
       secret: plaidSecret,
       environment: process.env.PLAID_ENV,
     });
 
-    const explicitUserId =
-      typeof body.userId === "string" && body.userId.trim().length > 0
-        ? body.userId.trim()
-        : typeof body.clientUserId === "string" && body.clientUserId.trim().length > 0
-          ? body.clientUserId.trim()
-          : null;
-    const resolvedUserId = explicitUserId ?? (await getBudgetOwnerUserId(supabase));
-
-    if (!resolvedUserId) {
-      return NextResponse.json(
-        { error: "Unable to resolve a budget owner user id." },
-        { status: 500 }
-      );
-    }
+    const resolvedUserId = authSession.user.id;
 
     const result = await exchangePublicTokenAndSync({
       plaidClient,

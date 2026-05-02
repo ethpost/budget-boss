@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { computeLiveBudgetHealth } from "../compute-live-budget-health";
 
 function formatDateInTimeZone(date: Date, timeZone: string): string {
@@ -42,7 +42,9 @@ export type BudgetHealthDashboardState =
       message: string;
     };
 
-export async function loadBudgetHealthDashboard(): Promise<BudgetHealthDashboardState> {
+export async function loadBudgetHealthDashboard(
+  authenticatedSupabase?: SupabaseClient
+): Promise<BudgetHealthDashboardState> {
   const asOfDate = getBudgetHealthAsOfDate();
   const supabaseUrl =
     process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -51,7 +53,7 @@ export async function loadBudgetHealthDashboard(): Promise<BudgetHealthDashboard
     process.env.SUPABASE_ANON_KEY ??
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  if (!supabaseUrl || !supabaseKey) {
+  if (!authenticatedSupabase && (!supabaseUrl || !supabaseKey)) {
     return {
       status: "missing-config",
       asOfDate,
@@ -60,7 +62,8 @@ export async function loadBudgetHealthDashboard(): Promise<BudgetHealthDashboard
     };
   }
 
-  const supabase = createClient(supabaseUrl, supabaseKey);
+  const supabase =
+    authenticatedSupabase ?? createClient(supabaseUrl as string, supabaseKey as string);
 
   try {
     const result = await computeLiveBudgetHealth({ supabase, asOfDate });

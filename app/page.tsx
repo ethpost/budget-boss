@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
+import { requirePageAuthSession } from "../lib/auth/server-auth";
 import { loadBudgetHealthDashboard } from "../lib/budget-health/server/load-budget-health-dashboard";
 
 export const dynamic = "force-dynamic";
@@ -267,8 +268,9 @@ function buildCategoryDetailSummary(params: {
 }
 
 export default async function Page({ searchParams }: PageProps) {
+  const authSession = await requirePageAuthSession("/");
   const resolvedSearchParams = (await searchParams) ?? {};
-  const state = await loadBudgetHealthDashboard();
+  const state = await loadBudgetHealthDashboard(authSession.supabase);
 
   if (state.status !== "ready") {
     return (
@@ -408,6 +410,9 @@ export default async function Page({ searchParams }: PageProps) {
           </Link>
           <Link className="shellLink" href="/settings">
             Connections
+          </Link>
+          <Link className="shellLink" href="/api/auth/logout">
+            Sign out
           </Link>
           <div className="shellPill">
             Last updated {formatReadableTimestamp(result.meta.computedAt)}

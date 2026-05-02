@@ -1,14 +1,13 @@
 import Link from "next/link";
-import { createClient } from "@supabase/supabase-js";
 import { buildTrendBasedBudgetPlan } from "../../lib/budget-setup/domain/build-trend-based-budget-plan";
 import { getActiveCategories } from "../../lib/budget-setup/repositories/get-active-categories";
 import { getCategorizedTransactionHistory } from "../../lib/budget-setup/repositories/get-categorized-transaction-history";
-import { getBudgetOwnerUserId } from "../../lib/budget-setup/repositories/get-budget-owner-user-id";
 import { getActiveCategoryBudgets } from "../../lib/budget-health/repositories/get-active-category-budgets";
 import { getActualSpendToDateByCategory } from "../../lib/budget-health/repositories/get-actual-spend-to-date-by-category";
 import { getPeriodContext } from "../../lib/budget-health/domain/get-period-context";
 import { getHistoricalContextWindow } from "../../lib/budget-health/domain/get-historical-context-window";
 import { getBudgetHealthAsOfDate } from "../../lib/budget-health/server/load-budget-health-dashboard";
+import { requirePageAuthSession } from "../../lib/auth/server-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -28,16 +27,10 @@ export default async function BudgetPage({
     error?: string | string[];
   }>;
 }) {
+  const authSession = await requirePageAuthSession("/budget");
   const asOfDate = getBudgetHealthAsOfDate();
   const period = getPeriodContext(asOfDate);
   const historicalWindow = getHistoricalContextWindow(asOfDate);
-  const supabaseUrl =
-    process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ??
-    process.env.SUPABASE_ANON_KEY ??
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
   const plaidConfigured =
     Boolean(process.env.PLAID_CLIENT_ID) && Boolean(process.env.PLAID_SECRET);
 
@@ -45,78 +38,8 @@ export default async function BudgetPage({
   const saved = searchParamsValue.saved === "1";
   const error = searchParamsValue.error === "1";
 
-  if (!supabaseUrl || !supabaseKey) {
-    return (
-      <main className="screen">
-        <header className="shellHeader">
-          <div className="shellBrand">
-            <div className="shellMark">BB</div>
-            <div>
-              <p className="shellKicker">Budget Boss</p>
-              <p className="shellTitle">Budget setup</p>
-            </div>
-          </div>
-          <div className="shellActions">
-            <Link className="shellLink" href="/">
-              Back to budget health
-            </Link>
-            <Link className="shellLink" href="/settings">
-              Connections
-            </Link>
-            <Link className="shellLink" href="/chat">
-              Chat
-            </Link>
-          </div>
-        </header>
-        <section className="hero">
-          <div className="eyebrow">Budget setup</div>
-          <h1 className="title">Set up the budget database first.</h1>
-          <p className="lede">
-            Add Supabase env vars so the app can read transactions and save monthly
-            budget periods.
-          </p>
-        </section>
-      </main>
-    );
-  }
-
-  const supabase = createClient(supabaseUrl, supabaseKey);
-  const budgetOwnerUserId = await getBudgetOwnerUserId(supabase);
-
-  if (!budgetOwnerUserId) {
-    return (
-      <main className="screen">
-        <header className="shellHeader">
-          <div className="shellBrand">
-            <div className="shellMark">BB</div>
-            <div>
-              <p className="shellKicker">Budget Boss</p>
-              <p className="shellTitle">Budget setup</p>
-            </div>
-          </div>
-          <div className="shellActions">
-            <Link className="shellLink" href="/">
-              Back to budget health
-            </Link>
-            <Link className="shellLink" href="/settings">
-              Connections
-            </Link>
-            <Link className="shellLink" href="/chat">
-              Chat
-            </Link>
-          </div>
-        </header>
-        <section className="hero">
-          <div className="eyebrow">Budget setup</div>
-          <h1 className="title">No active budget owner found.</h1>
-          <p className="lede">
-            The app needs at least one active category owned by a real Supabase user id
-            before it can generate a budget plan.
-          </p>
-        </section>
-      </main>
-    );
-  }
+  const supabase = authSession.supabase;
+  const budgetOwnerUserId = authSession.user.id;
 
   const [activeCategories, historicalRows, currentBudgets, currentMonthSpendRows] =
     await Promise.all([
@@ -167,6 +90,9 @@ export default async function BudgetPage({
           </Link>
           <Link className="shellLink" href="/chat">
             Chat
+          </Link>
+          <Link className="shellLink" href="/api/auth/logout">
+            Sign out
           </Link>
           <div className="shellPill">Trend-based monthly plan</div>
         </div>
