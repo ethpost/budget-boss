@@ -26,6 +26,8 @@ describe("normalizePlaidTransactions", () => {
           amount: 12.34,
           merchantName: "Coffee Shop",
           description: "Coffee Shop Latte",
+          plaidCategoryPrimary: null,
+          plaidCategoryDetailed: null,
           notes: null,
           categoryId: null,
         },

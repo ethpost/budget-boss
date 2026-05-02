@@ -26,6 +26,8 @@ export type HandlePlaidTransactionsWebhookResult =
       importedCount: number;
       removedCount: number;
       skippedPendingCount: number;
+      autoCategorizedCount: number;
+      categorizationNeedsReviewCount: number;
       upsertedCount: number;
       nextCursor: string | null;
     };
@@ -93,6 +95,8 @@ export async function handlePlaidTransactionsWebhook(params: {
     importedCount: result.importedCount,
     removedCount: result.removedCount,
     skippedPendingCount: result.skippedPendingCount,
+    autoCategorizedCount: result.autoCategorizedCount,
+    categorizationNeedsReviewCount: result.categorizationNeedsReviewCount,
     upsertedCount: result.upsertedCount,
     nextCursor: result.nextCursor,
   };

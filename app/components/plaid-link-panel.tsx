@@ -35,6 +35,8 @@ type PlaidSyncResult = {
   importedCount: number;
   removedCount: number;
   skippedPendingCount: number;
+  autoCategorizedCount: number;
+  categorizationNeedsReviewCount: number;
   upsertedCount: number;
   nextCursor: string | null;
   completedAt: string;
@@ -137,6 +139,14 @@ export function PlaidLinkPanel(props: { enabled: boolean }) {
           value: String(lastSyncResult.skippedPendingCount),
         },
         {
+          label: "Auto-categorized",
+          value: String(lastSyncResult.autoCategorizedCount),
+        },
+        {
+          label: "Needs review",
+          value: String(lastSyncResult.categorizationNeedsReviewCount),
+        },
+        {
           label: "Removed",
           value: String(lastSyncResult.removedCount),
         },
@@ -234,6 +244,14 @@ export function PlaidLinkPanel(props: { enabled: boolean }) {
                 skippedPendingCount:
                   typeof syncResult.skippedPendingCount === "number"
                     ? syncResult.skippedPendingCount
+                    : 0,
+                autoCategorizedCount:
+                  typeof syncResult.autoCategorizedCount === "number"
+                    ? syncResult.autoCategorizedCount
+                    : 0,
+                categorizationNeedsReviewCount:
+                  typeof syncResult.categorizationNeedsReviewCount === "number"
+                    ? syncResult.categorizationNeedsReviewCount
                     : 0,
                 upsertedCount:
                   typeof syncResult.upsertedCount === "number" ? syncResult.upsertedCount : 0,

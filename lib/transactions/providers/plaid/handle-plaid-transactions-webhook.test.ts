@@ -18,6 +18,8 @@ vi.mock("./sync-plaid-transactions", () => ({
     fetchedCount: 2,
     importedCount: 1,
     skippedPendingCount: 1,
+    autoCategorizedCount: 1,
+    categorizationNeedsReviewCount: 0,
     removedCount: 0,
     upsertedCount: 1,
     nextCursor: "cursor-2",
@@ -62,6 +64,8 @@ describe("handlePlaidTransactionsWebhook", () => {
       importedCount: 1,
       removedCount: 0,
       skippedPendingCount: 1,
+      autoCategorizedCount: 1,
+      categorizationNeedsReviewCount: 0,
       upsertedCount: 1,
       nextCursor: "cursor-2",
     });

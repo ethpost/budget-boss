@@ -3,8 +3,11 @@ import {
   normalizePlaidTransactions,
   type NormalizePlaidTransactionsResult,
 } from "../../adapters/plaid/normalize-plaid-transactions";
+import { getActiveCategories } from "../../../budget-setup/repositories/get-active-categories";
+import { categorizeImportedTransactions } from "../../domain/categorize-imported-transactions";
 import { prepareTransactionUpsertRows } from "../../domain/prepare-transaction-import";
 import { deleteTransactionsBySourceTransactionIds } from "../../repositories/delete-transactions-by-source-transaction-ids";
+import { getTransactionCategorizationHistory } from "../../repositories/get-transaction-categorization-history";
 import { upsertTransactions } from "../../repositories/upsert-transactions";
 import {
   PlaidTransactionsClient,
@@ -24,6 +27,8 @@ export type SyncPlaidTransactionsResult = {
   fetchedCount: number;
   importedCount: number;
   skippedPendingCount: number;
+  autoCategorizedCount: number;
+  categorizationNeedsReviewCount: number;
   removedCount: number;
   upsertedCount: number;
   nextCursor: string | null;
@@ -93,9 +98,25 @@ export async function syncPlaidTransactions({
   const uniqueTransactions = dedupeTransactionsBySourceTransactionId(
     collectedTransactions
   );
+
+  const [activeCategories, categorizedTransactionHistory] = await Promise.all([
+    getActiveCategories(supabase, userId),
+    getTransactionCategorizationHistory({
+      supabase,
+      userId,
+      limit: 500,
+    }),
+  ]);
+
+  const categorization = categorizeImportedTransactions({
+    transactions: uniqueTransactions,
+    activeCategories,
+    categorizedTransactionHistory,
+  });
+
   const rows = prepareTransactionUpsertRows({
     userId,
-    transactions: uniqueTransactions,
+    transactions: categorization.transactions,
   });
 
   const { upsertedCount } = await upsertTransactions(supabase, rows);
@@ -109,6 +130,8 @@ export async function syncPlaidTransactions({
     fetchedCount,
     importedCount: rows.length,
     skippedPendingCount,
+    autoCategorizedCount: categorization.audit.categorizedCount,
+    categorizationNeedsReviewCount: categorization.audit.needsReviewCount,
     removedCount,
     upsertedCount,
     nextCursor,

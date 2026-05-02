@@ -7,6 +7,10 @@ export type PlaidTransactionInput = {
   merchant_name?: string | null;
   name?: string | null;
   pending?: boolean | null;
+  personal_finance_category?: {
+    primary?: string | null;
+    detailed?: string | null;
+  } | null;
 };
 
 export type PlaidTransactionPayload = {
@@ -78,6 +82,12 @@ export function normalizePlaidTransactions(
       merchantName:
         normalizeText(transaction.merchant_name) ?? normalizeText(transaction.name),
       description: normalizeText(transaction.name),
+      plaidCategoryPrimary: normalizeText(
+        transaction.personal_finance_category?.primary
+      ),
+      plaidCategoryDetailed: normalizeText(
+        transaction.personal_finance_category?.detailed
+      ),
       notes: null,
       categoryId: null,
     });

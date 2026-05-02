@@ -63,6 +63,8 @@ export async function POST(request: Request) {
       importedCount: result.importedCount,
       removedCount: result.removedCount,
       skippedPendingCount: result.skippedPendingCount,
+      autoCategorizedCount: result.autoCategorizedCount,
+      categorizationNeedsReviewCount: result.categorizationNeedsReviewCount,
       upsertedCount: result.upsertedCount,
       nextCursor: result.nextCursor,
     });

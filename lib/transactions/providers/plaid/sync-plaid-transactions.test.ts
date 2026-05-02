@@ -7,6 +7,26 @@ vi.mock(
   })
 );
 
+vi.mock("../../../budget-setup/repositories/get-active-categories", () => ({
+  getActiveCategories: vi.fn().mockResolvedValue([
+    {
+      categoryId: "cat-books",
+      categoryName: "Books",
+      categoryBehaviorType: "discretionary",
+    },
+  ]),
+}));
+
+vi.mock("../../repositories/get-transaction-categorization-history", () => ({
+  getTransactionCategorizationHistory: vi.fn().mockResolvedValue([
+    {
+      merchantName: "Coffee Shop",
+      description: "Coffee Shop Latte",
+      categoryId: "cat-coffee",
+    },
+  ]),
+}));
+
 import { syncPlaidTransactions } from "./sync-plaid-transactions";
 
 describe("syncPlaidTransactions", () => {
@@ -79,7 +99,7 @@ describe("syncPlaidTransactions", () => {
       [
         {
           user_id: "user-123",
-          category_id: null,
+          category_id: "cat-coffee",
           transaction_date: "2026-04-11",
           amount: 12.34,
           merchant_name: "Coffee Shop",
@@ -97,6 +117,8 @@ describe("syncPlaidTransactions", () => {
       fetchedCount: 2,
       importedCount: 1,
       skippedPendingCount: 0,
+      autoCategorizedCount: 1,
+      categorizationNeedsReviewCount: 0,
       removedCount: 1,
       upsertedCount: 1,
       nextCursor: "cursor-2",

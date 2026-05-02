@@ -4,6 +4,8 @@ export type BankFeedTransactionInput = {
   amount: number;
   merchantName?: string | null;
   description?: string | null;
+  plaidCategoryPrimary?: string | null;
+  plaidCategoryDetailed?: string | null;
   source: string;
   notes?: string | null;
   categoryId?: string | null;
