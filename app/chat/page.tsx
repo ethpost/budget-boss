@@ -113,22 +113,22 @@ export default async function ChatPage({ searchParams }: ChatPageProps) {
       <div className="workspace workspace--single">
         <section className="hero">
           <div className="eyebrow">Chat</div>
-          <h1 className="title">Ask about the month.</h1>
+          <h1 className="title">Ask about buying behavior.</h1>
           <p className="lede">
-            This is a deterministic chat surface grounded in the current budget-health
-            snapshot. It can explain pace, confidence, history, and the categories
-            driving the projection.
+            This chat gathers deterministic budget and transaction evidence, then uses
+            an LLM to reason from that evidence. It is built for questions about
+            merchants, categories, habits, and what changed.
           </p>
 
           {state.status === "ready" ? (
             <div className="chatIntroGrid">
               <article className="panel panel--accent">
-                <p className="label">Current direction</p>
+                <p className="label">Budget context</p>
                 <p className="value">{state.result.explanation.summary}</p>
               </article>
 
               <article className="panel">
-                <p className="label">Current driver</p>
+                <p className="label">Current budget driver</p>
                 <p className="value">
                   {state.result.explanation.driverSummary ?? "No primary driver yet."}
                 </p>

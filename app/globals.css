@@ -907,6 +907,7 @@ textarea {
   margin: 8px 0 0;
   color: #24303f;
   line-height: 1.6;
+  white-space: pre-wrap;
 }
 
 .chatQuickReplies {
@@ -925,6 +926,11 @@ textarea {
   background: rgba(255, 255, 255, 0.88);
   color: var(--plan);
   cursor: pointer;
+}
+
+.chatChip:disabled {
+  cursor: progress;
+  opacity: 0.65;
 }
 
 .chatComposer {

@@ -3,10 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import {
-  buildBudgetChatResponse,
-  type BudgetChatContext,
-} from "../../lib/budget-health/domain/build-budget-chat-response";
+import { type BudgetChatContext } from "../../lib/budget-health/domain/build-budget-chat-response";
 import {
   resolveBudgetChatCategorySelection,
   type BudgetChatCategoryOption,
@@ -16,6 +13,11 @@ type ChatMessage = {
   id: string;
   role: "assistant" | "user";
   content: string;
+};
+
+type BehaviorChatResponse = {
+  answer?: string;
+  error?: string;
 };
 
 function makeId(): string {
@@ -34,10 +36,11 @@ export function BudgetChat(props: {
       id: "welcome",
       role: "assistant",
       content:
-        "Ask me about the month-end projection, the main driver, or recent history. I stay grounded in the current budget snapshot.",
+        "Ask me about how your buying behavior is changing. I use your budget and transaction evidence, then reason from that evidence instead of making up numbers.",
     },
   ]);
   const [input, setInput] = useState("");
+  const [isSending, setIsSending] = useState(false);
 
   useEffect(() => {
     if (!props.context.selectedCategoryName) {
@@ -57,16 +60,16 @@ export function BudgetChat(props: {
     () =>
       selectedCategory
         ? [
-            `Show me ${selectedCategory.categoryName}`,
-            "What is driving this?",
-            "How confident are you?",
-            "What does history say?",
+            `Is ${selectedCategory.categoryName} actually the issue?`,
+            "What behavior changed here?",
+            "Is this more frequent or more expensive?",
+            "What should I pay attention to?",
           ]
         : [
-            "What is driving this?",
-            "How confident are you?",
-            "What does history say?",
-            "Show the biggest over-budget categories.",
+            "Where am I spending differently?",
+            "What merchants are creeping up?",
+            "Is dining actually the problem?",
+            "Am I making more small purchases than usual?",
           ],
     [selectedCategory]
   );
@@ -82,9 +85,9 @@ export function BudgetChat(props: {
     ]);
   }
 
-  function sendMessage(message: string) {
+  async function sendMessage(message: string) {
     const trimmed = message.trim();
-    if (!trimmed) return;
+    if (!trimmed || isSending) return;
 
     const categorySelection = resolveBudgetChatCategorySelection({
       message: trimmed,
@@ -99,30 +102,43 @@ export function BudgetChat(props: {
     const activeCategory = categorySelection ?? selectedCategory;
 
     appendMessage("user", trimmed);
-    const reply = buildBudgetChatResponse({
-      message: trimmed,
-      context: {
-        ...props.context,
-        selectedCategoryName: activeCategory?.categoryName ?? props.context.selectedCategoryName,
-        selectedCategoryBehaviorType:
-          activeCategory?.categoryBehaviorType ?? props.context.selectedCategoryBehaviorType,
-        selectedCategoryActualSpendToDate:
-          activeCategory?.actualSpendToDate ?? props.context.selectedCategoryActualSpendToDate,
-        selectedCategoryPlannedBudgetAmount:
-          activeCategory?.plannedBudgetAmount ?? props.context.selectedCategoryPlannedBudgetAmount,
-        selectedCategoryProjectedVarianceAmount:
-          activeCategory?.projectedVarianceAmount ??
-          props.context.selectedCategoryProjectedVarianceAmount,
-        selectedCategoryHref: activeCategory?.href ?? props.context.selectedCategoryHref,
-      },
-    });
-    appendMessage("assistant", reply);
     setInput("");
+    setIsSending(true);
+
+    try {
+      const response = await fetch("/api/chat/behavior", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          question: activeCategory
+            ? `${trimmed}\n\nSelected category: ${activeCategory.categoryName}`
+            : trimmed,
+        }),
+      });
+      const payload = (await response.json()) as BehaviorChatResponse;
+
+      if (!response.ok || !payload.answer) {
+        throw new Error(payload.error ?? "Budget Boss could not answer that yet.");
+      }
+
+      appendMessage("assistant", payload.answer);
+    } catch (error) {
+      appendMessage(
+        "assistant",
+        error instanceof Error
+          ? error.message
+          : "Budget Boss could not answer that yet."
+      );
+    } finally {
+      setIsSending(false);
+    }
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    sendMessage(input);
+    void sendMessage(input);
   }
 
   return (
@@ -155,7 +171,8 @@ export function BudgetChat(props: {
             key={prompt}
             type="button"
             className="chatChip"
-            onClick={() => sendMessage(prompt)}
+            onClick={() => void sendMessage(prompt)}
+            disabled={isSending}
           >
             {prompt}
           </button>
@@ -167,11 +184,12 @@ export function BudgetChat(props: {
           className="chatInput"
           value={input}
           onChange={(event) => setInput(event.target.value)}
-          placeholder="Ask about budget health, history, or drivers..."
+          placeholder="Ask about merchants, categories, frequency, or what changed..."
           aria-label="Ask Budget Boss"
+          disabled={isSending}
         />
-        <button className="primaryButton" type="submit">
-          Send
+        <button className="primaryButton" type="submit" disabled={isSending}>
+          {isSending ? "Thinking" : "Send"}
         </button>
       </form>
     </section>
