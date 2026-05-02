@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
+import { LogoutButton } from "./components/logout-button";
 import { requirePageAuthSession } from "../lib/auth/server-auth";
 import { loadBudgetHealthDashboard } from "../lib/budget-health/server/load-budget-health-dashboard";
 
@@ -411,9 +412,7 @@ export default async function Page({ searchParams }: PageProps) {
           <Link className="shellLink" href="/settings">
             Connections
           </Link>
-          <Link className="shellLink" href="/api/auth/logout">
-            Sign out
-          </Link>
+          <LogoutButton />
           <div className="shellPill">
             Last updated {formatReadableTimestamp(result.meta.computedAt)}
           </div>

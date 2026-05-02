@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { PlaidLinkPanel } from "../components/plaid-link-panel";
+import { LogoutButton } from "../components/logout-button";
 import { buildTransactionImportAudit } from "../../lib/transactions/domain/build-transaction-import-audit";
 import { getRecentTransactions } from "../../lib/transactions/repositories/get-recent-transactions";
 import { requirePageAuthSession } from "../../lib/auth/server-auth";
@@ -70,9 +71,7 @@ export default async function SettingsPage() {
           <Link className="shellLink" href="/">
             Back to budget health
           </Link>
-          <Link className="shellLink" href="/api/auth/logout">
-            Sign out
-          </Link>
+          <LogoutButton />
           <div className="shellPill">Connections and app controls</div>
         </div>
       </header>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LogoutButton } from "../components/logout-button";
 import { buildTrendBasedBudgetPlan } from "../../lib/budget-setup/domain/build-trend-based-budget-plan";
 import { getActiveCategories } from "../../lib/budget-setup/repositories/get-active-categories";
 import { getCategorizedTransactionHistory } from "../../lib/budget-setup/repositories/get-categorized-transaction-history";
@@ -91,9 +92,7 @@ export default async function BudgetPage({
           <Link className="shellLink" href="/chat">
             Chat
           </Link>
-          <Link className="shellLink" href="/api/auth/logout">
-            Sign out
-          </Link>
+          <LogoutButton />
           <div className="shellPill">Trend-based monthly plan</div>
         </div>
       </header>

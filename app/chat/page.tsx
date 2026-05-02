@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BudgetChat } from "../components/budget-chat";
+import { LogoutButton } from "../components/logout-button";
 import { requirePageAuthSession } from "../../lib/auth/server-auth";
 import { loadBudgetHealthDashboard } from "../../lib/budget-health/server/load-budget-health-dashboard";
 
@@ -99,9 +100,7 @@ export default async function ChatPage({ searchParams }: ChatPageProps) {
           <Link className="shellLink" href="/settings">
             Connections
           </Link>
-          <Link className="shellLink" href="/api/auth/logout">
-            Sign out
-          </Link>
+          <LogoutButton />
           <div className="shellPill">
             {state.status === "ready" ? `Last updated ${formatReadableTimestamp(state.result.meta.computedAt)}` : "Budget snapshot unavailable"}
           </div>
