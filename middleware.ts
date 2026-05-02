@@ -58,6 +58,34 @@ function setAuthCookies(
   });
 }
 
+function buildRequestHeadersWithAuthCookies(
+  request: NextRequest,
+  session: {
+    access_token: string;
+    refresh_token: string;
+  }
+): Headers {
+  const headers = new Headers(request.headers);
+  const existingCookies = request.headers.get("cookie") ?? "";
+  const preservedCookies = existingCookies
+    .split(";")
+    .map((cookie) => cookie.trim())
+    .filter(Boolean)
+    .filter((cookie) => {
+      const name = cookie.slice(0, cookie.indexOf("="));
+      return (
+        name !== AUTH_ACCESS_COOKIE_NAME &&
+        name !== AUTH_REFRESH_COOKIE_NAME
+      );
+    });
+
+  preservedCookies.push(`${AUTH_ACCESS_COOKIE_NAME}=${session.access_token}`);
+  preservedCookies.push(`${AUTH_REFRESH_COOKIE_NAME}=${session.refresh_token}`);
+  headers.set("cookie", preservedCookies.join("; "));
+
+  return headers;
+}
+
 async function hasValidAccessToken(accessToken: string | undefined): Promise<boolean> {
   if (!accessToken) return false;
 
@@ -116,7 +144,14 @@ export async function middleware(request: NextRequest) {
     const response =
       pathname === "/login"
         ? NextResponse.redirect(new URL("/", request.url))
-        : NextResponse.next();
+        : NextResponse.next({
+            request: {
+              headers: buildRequestHeadersWithAuthCookies(
+                request,
+                refreshedSession
+              ),
+            },
+          });
     setAuthCookies(response, refreshedSession);
     return response;
   }
