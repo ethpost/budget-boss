@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 import { createPlaidClient } from "../../../../lib/transactions/providers/plaid/create-plaid-client";
 import { exchangePublicTokenAndSync } from "../../../../lib/transactions/providers/plaid/exchange-public-token-and-sync";
 import { upsertPlaidItemConnection } from "../../../../lib/transactions/repositories/upsert-plaid-item-connection";
-import { requireRequestAuthSession } from "../../../../lib/auth/server-auth";
+import {
+  createSupabaseServiceClient,
+  requireRequestAuthSession,
+} from "../../../../lib/auth/server-auth";
 
 function getRequiredText(value: unknown, fieldName: string): string {
   if (typeof value !== "string" || value.trim().length === 0) {
@@ -49,7 +52,7 @@ export async function POST(request: Request) {
     });
 
     await upsertPlaidItemConnection({
-      supabase,
+      supabase: createSupabaseServiceClient(),
       userId: resolvedUserId,
       itemId: result.itemId,
       accessToken: result.accessToken,
